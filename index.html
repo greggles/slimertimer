@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Slimer Timer: For contractions and other interval-oriented events.</title>
+  <style>
+    button {
+      padding: 2em;
+      color: white;
+    }
+    button.start {
+      background-color: green;
+    }
+    button.stop {
+      background-color: red;
+    }
+  </style>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
+  <script>
+  var toggleTimerButton = null;
+  var timerData;
+  function getClockTime(aNow) {
+    var hours = aNow.getHours();
+    var minutes = aNow.getMinutes();
+    var seconds = aNow.getSeconds();
+    var ampm = hours >= 12 ? 'pm' : 'am';
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    seconds = seconds < 10 ? '0' + seconds : seconds;
+    hours = hours % 12;
+    // The hour '0' should be '12'.
+    hours = hours ? hours : 12; 
+    return hours + ':' + minutes + ':' + seconds + " " + ampm;
+  }
+  $(document).ready(function() {
+    toggleTimerButton = $("#toggle-timer")
+    toggleTimerButton.click(function() {
+      var rightNow = new Date();
+      if (toggleTimerButton.hasClass("start")) {
+        var startedTime = getClockTime(rightNow);
+        console.log("Started at " + startedTime);
+        $("#row1 > .time").text(startedTime);
+      }
+      if (toggleTimerButton.hasClass("stop")) {
+        var stoppedTime = getClockTime(rightNow);
+        console.log("Stopped at " + stoppedTime);
+      }
+      toggleTimerButton.toggleClass('start stop');
+      event.preventDefault();
+    });
+  });
+  </script>
+</head>
+<body>
+  <h1>Time things</h1>
+        <button id="toggle-timer" class="start" type="submit">Start timer</button>
+<table>
+  <thead>
+    <tr>
+      <td>Start time</td><td>Length</td><td>Interval</td>
+    </tr>
+  </thead>
+  <tbody>
+    <tr id="row1">
+      <td class="time">n/a</td><td class="length">n/a</td><td class="interval">n/a</td>
+    </tr>
+  </tbody>
+</table>
+
+  <h2>To do:</h2>
+  Click the "Start timer" button:
+  <ol>
+    <li>get the current time, put it in an array</li>
+    <li>change the "toggle" button text to "Stop timer"</li>
+    <li>change the "toggle" button class to "stop"</li>
+    <li>add a row to a table for "start time" and populate it with HH:MM</li>
+  </ol>
+  Click "Stop timer" button:
+  <ol>
+    <li>get the current time, add it to the array</li>
+    <li>change the "toggle" button text to "Start timer"</li>
+    <li>change the "toggle" button class to "start"</li>
+    <li>update the top table row to show elapsed time</li>
+  </ol>
+</body>
+</html>
+
+
