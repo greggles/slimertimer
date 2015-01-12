@@ -123,6 +123,10 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 
   <script>
+  // Get rid of the h1 after a bit, it doesn't help.
+  setTimeout(function() {
+    $("h1").hide('blind', 1000)
+  }, 5000);
   var toggleTimerButton = null;
   var timerData = [];
   function getClockTime(aNow) {
@@ -190,8 +194,10 @@
 </head>
 <body>
   <div class="timer-content">
-    <h1>Contraction timer</h1>
-          <button id="toggle-timer" class="start" type="submit">Start timer</button>
+    <div class="title">
+      <h1>Contraction timer</h1>
+    </div>
+    <button id="toggle-timer" class="start" type="submit">Start timer</button>
     <table>
       <thead>
         <tr>
