@@ -90,7 +90,7 @@
       background: #fafafa;
       background: linear-gradient(to bottom,  #fbfbfb,  #fafafa);
     }
-    table tr.even td {
+    table tr:nth-child(odd) td {
       background: #ededed;
       background: linear-gradient(to bottom,  #ededed,  #ebebeb);
     }
@@ -124,9 +124,12 @@
 
   <script>
   // Get rid of the h1 after a bit, it doesn't help.
-  setTimeout(function() {
-    $("h1").hide('blind', 1000)
-  }, 5000);
+  function hideHeader(pageTitle) {
+    if (pageTitle.css('display') === 'block') {
+      pageTitle.hide('blind', 1000)
+    }
+  }
+  var pageTitle = null;
   var toggleTimerButton = null;
   var timerData = [];
   function getClockTime(aNow) {
@@ -149,25 +152,30 @@
     return "" + elapsedMinutes + " mins " + remainingSeconds + " seconds";
   }
   $(document).ready(function() {
-    toggleTimerButton = $("#toggle-timer")
+    toggleTimerButton = $("#toggle-timer");
+    pageTitle = $("h1");
+    // Hide the header after 5 seconds.
+    setTimeout(function() {
+      hideHeader(pageTitle);
+    }, 5000);
     toggleTimerButton.click(function() {
+      // Or, hide the header as soon as the button is clicked.
+      hideHeader(pageTitle);
       var rightNow = new Date();
       if (toggleTimerButton.hasClass("start")) {
         var startedTime = getClockTime(rightNow);
         // Starting always pushes a new item onto the array.
-        console.log(timerData.length);
         timerData[timerData.length] = {'startedTime': rightNow};
-        console.log("Started at " + startedTime);
         var rowName = 'row' + timerData.length;
-        var rowClass = (timerData.length % 2 == 0 ? "even" : "odd")
         var oldRowName = 'row' + (timerData.length - 1);
+        var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="length">-</td><td class="interval">-</td></tr>';
         if (timerData.length > 1) {
-          var newRow = '<tr id="' + rowName + '" class="' + rowClass + '"><td class="time">-</td><td class="length">-</td><td class="interval">-</td></tr>';
           $("#" + oldRowName).before(newRow);
         }
         else {
-          var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="length">-</td><td class="interval">n/a</td></tr>';
           $("tbody").append(newRow);
+          // On the first event there is no interval.
+          $("#" + rowName + " > .interval").text(':)');
         }
         $("#" + rowName + "> .time").text(startedTime);
         toggleTimerButton.text('Stop timer');
@@ -176,7 +184,6 @@
         var thisTime = timerData.length - 1;
         var lastTime = thisTime - 1;
         timerData[thisTime].stoppedTime = rightNow;
-        console.log(timerData);
         var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
         var rowName = 'row' + timerData.length;
         $("#" + rowName + "> .length").text(elapsedTime);
