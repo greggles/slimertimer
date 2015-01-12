@@ -112,6 +112,11 @@
       font-size: 1.2em;
       margin-bottom: .4em;
     }
+    button em {
+      text-decoration: underline;
+      font-style: normal;
+      font-size: 1.1em;
+    }
     button.start {
       background: linear-gradient(to bottom, #62A160, #589056);
     }
@@ -158,7 +163,7 @@
     setTimeout(function() {
       hideHeader(pageTitle);
     }, 5000);
-    toggleTimerButton.click(function() {
+    function toggleTimer() {
       // Or, hide the header as soon as the button is clicked.
       hideHeader(pageTitle);
       var rightNow = new Date();
@@ -178,7 +183,7 @@
           $("#" + rowName + " > .interval").text(':)');
         }
         $("#" + rowName + "> .time").text(startedTime);
-        toggleTimerButton.text('Stop timer');
+        toggleTimerButton.html('<em>S</em>top timer');
       }
       if (toggleTimerButton.hasClass("stop")) {
         var thisTime = timerData.length - 1;
@@ -191,10 +196,21 @@
           var intervalTime = getElapsedTime(timerData[lastTime].startedTime, timerData[thisTime].startedTime);
           $("#" + rowName + "> .interval").text(intervalTime);
         }
-        toggleTimerButton.text('Start timer');
+        toggleTimerButton.html('<em>S</em>tart timer');
       }
       toggleTimerButton.toggleClass('start stop');
       event.preventDefault();
+    }
+    $(window).keydown(function(e) {
+        switch (e.keyCode) {
+          // 83, s. 13, return. 14, enter. 32, space.
+          case 83: case 13: case 14: case 32:
+            toggleTimer();
+        }
+        return;
+    });
+    toggleTimerButton.click(function() {
+      toggleTimer();
     });
   });
   </script>
@@ -204,7 +220,7 @@
     <div class="title">
       <h1>Contraction timer</h1>
     </div>
-    <button id="toggle-timer" class="start" type="submit">Start timer</button>
+    <button id="toggle-timer" class="start" accesskey="s" type="submit"><em>S</em>tart timer</button>
     <table>
       <thead>
         <tr>
@@ -219,7 +235,7 @@
     <h2>How to use this:</h2>
     <ol>
       <li>This site is to help anyone who is tracking childbirth labor contractions</li>
-      <li>When a contraction starts hit the start button. It will change to a "stop" button which...you should press again when the contraction stops.</li>
+      <li>When a contraction starts hit the start button (or press a key like "s", enter/return, or the space bar). It will change to a "stop" button which...you should press again when the contraction stops.</li>
       <li>Work with your healthcare professional and do your own research to decide how to use this information, but...</li>
       <li>Common rules are "5-1-1" where you should wait for contractions to be 5 minutes apart each one lasting 1 minute over a 1 hour period before you go to the birthing center. This tool is oriented toward tracking a 5-1-1 scenario.</li>
       <li>You may also be in "serious labor" if you cannot talk through the contraction or are the contractions are intense/painful.</li>
