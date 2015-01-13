@@ -1,6 +1,6 @@
 ## Slimer Timer: a childbirth labor contraction timer
 
-Try an online demo: [mobile first contraction timer](greggles.github.io/slimertimer/).
+Try an online demo: [mobile first contraction timer](http://greggles.github.io/slimertimer/).
 
 This is a responsive, mobile first, single page app to help people who are 
 in the process of childbirth. It will help measure the time, length, and
