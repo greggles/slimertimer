@@ -222,8 +222,12 @@
     toggleTimerButton = $("#toggle-timer");
     pageTitle = $("h1");
     $("#clear-storage").click(function() {
+      toggleTimerButton.addClass('start');
+      toggleTimerButton.removeClass('stop');
       localStorage.clear();
-      localStorage.setItem('timerData', JSON.stringify([]));
+      toggleTimerButton.html('<em>S</em>tart timer');
+      timerData = [];
+      localStorage.setItem('timerData', JSON.stringify(timerData));
       $('#timer-data tbody tr').each(function (i, row) {
         $(this).css("background-color","#FF3700");
         $(this).fadeOut(400, function(){
