@@ -153,14 +153,11 @@
     }
   }
   var timerData = [];
-  if (supports_html5_storage()) {
-    if (localStorage.getItem('timerData')) {
-      timerData = JSON.parse(localStorage.getItem('timerData'));
-    }
-    else {
-      localStorage.setItem('timerData', JSON.stringify(timerData));
-      timerData = JSON.parse(localStorage.getItem('timerData'));
-    }
+  var currentState = 'start';
+  function synchDomToStorage(timerData) {
+      // If timerdata says it is stop mode, show stop mode.
+      // If timerdata says it is start mode, show start mode.
+      // Delete and re-Populate all the rows worth of data.
   }
   function getClockTime(aNow) {
     return aNow.format('h:mm:ss a');
@@ -169,16 +166,15 @@
     var elapsedSeconds = (laterTime - earlyTime);
     var elapsedMinutes = Math.floor(elapsedSeconds / 60);
     var remainingSeconds = Math.round(elapsedSeconds % 60);
-
     return "" + elapsedMinutes + " mins " + remainingSeconds + " seconds";
   }
-  function toggleTimer(toggleTimerButton, timerData, currentCount) {
+  function toggleTimer(toggleTimerButton, timerData, currentCount, currentState) {
     // Or, hide the header as soon as the button is clicked.
     hideHeader(pageTitle);
     // TODO: move to using unix timestamps
     var rightNow = moment();
     var thisData = [];
-    if (toggleTimerButton.hasClass("start")) {
+    if (currentState == "start") {
       var startedTime = getClockTime(rightNow);
       // Starting always pushes a new item onto the array.
       timerData[currentCount] = {'startedTime': rightNow.unix()};
@@ -195,8 +191,9 @@
       }
       $("#" + rowName + "> .time").text(startedTime);
       toggleTimerButton.html('<em>S</em>top timer');
+      currentState = 'stop';
     }
-    if (toggleTimerButton.hasClass("stop")) {
+    else if (currentState == "stop") {
       var thisTime = currentCount - 1;
       var lastTime = thisTime - 1;
       timerData[thisTime].stoppedTime = rightNow.unix();
@@ -208,10 +205,12 @@
         $("#" + rowName + "> .interval").text(intervalTime);
       }
       toggleTimerButton.html('<em>S</em>tart timer');
+      currentState = 'start';
     }
     toggleTimerButton.toggleClass('start stop');
     if (supports_html5_storage()) {
       localStorage.setItem('timerData', JSON.stringify(timerData));
+      localStorage['timerState'] = currentState;
       showClearButton();
     }
   }
@@ -219,6 +218,19 @@
     $("#clear-storage").show('blind', {}, 500);
   }
   $(document).ready(function() {
+    if (supports_html5_storage()) {
+      if (localStorage.getItem('timerData')) {
+        showClearButton();
+        // TODO: Synch to dom.
+        timerData = JSON.parse(localStorage.getItem('timerData'));
+        currentState = localStorage['timerState'];
+      }
+      else {
+        localStorage.setItem('timerData', JSON.stringify(timerData));
+        localStorage['timerState'] = currentState;
+        timerData = JSON.parse(localStorage.getItem('timerData'));
+      }
+    }
     toggleTimerButton = $("#toggle-timer");
     pageTitle = $("h1");
     $("#clear-storage").click(function() {
@@ -227,6 +239,8 @@
       localStorage.clear();
       toggleTimerButton.html('<em>S</em>tart timer');
       timerData = [];
+      currentState = 'start'
+      localStorage['timerState'] = currentState;
       localStorage.setItem('timerData', JSON.stringify(timerData));
       $('#timer-data tbody tr').each(function (i, row) {
         $(this).css("background-color","#FF3700");
@@ -245,13 +259,15 @@
         case 83: case 13: case 14: case 32:
       var currentCount = Math.max(timerData.length, 1);
       timerData = JSON.parse(localStorage.getItem('timerData'));
-      toggleTimer(toggleTimerButton, timerData, currentCount);
+      currentState = localStorage['timerState'];
+      toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
       }
     });
     toggleTimerButton.click(function() {
       var currentCount = timerData.length;
       timerData = JSON.parse(localStorage.getItem('timerData'));
-      toggleTimer(toggleTimerButton, timerData, currentCount);
+      currentState = localStorage['timerState'];
+      toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
     });
   });
   </script>
