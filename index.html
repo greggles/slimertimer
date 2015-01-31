@@ -168,44 +168,52 @@
     var remainingSeconds = Math.round(elapsedSeconds % 60);
     return "" + elapsedMinutes + " mins " + remainingSeconds + " seconds";
   }
+  function addStartRow(currentCount, toggleTimerButton, startedTime) {
+    var rowName = 'row' + (currentCount + 1);
+    var oldRowName = 'row' + (currentCount);
+    var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="duration">-</td><td class="interval">-</td></tr>';
+    if (currentCount > 0) {
+      $("#" + oldRowName).before(newRow);
+    }
+    else {
+      $("tbody").append(newRow);
+      // On the first event there is no interval.
+      $("#" + rowName + " > .interval").text(':)');
+    }
+    $("#" + rowName + "> .time").text(startedTime);
+    toggleTimerButton.html('<em>S</em>top timer');
+    return 'stop';
+  }
+  function updateStopRow(timerData, thisTime, currentCount, toggleTimerButton) {
+    var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
+    var rowName = 'row' + currentCount;
+    $("#" + rowName + "> .duration").text(elapsedTime);
+    if (currentCount > 1) {
+      var lastTime = thisTime - 1;
+      var intervalTime = getElapsedTime(timerData[lastTime].startedTime, timerData[thisTime].startedTime);
+      $("#" + rowName + "> .interval").text(intervalTime);
+    }
+    toggleTimerButton.html('<em>S</em>tart timer');
+    return 'start';
+  }
+
   function toggleTimer(toggleTimerButton, timerData, currentCount, currentState) {
     // Or, hide the header as soon as the button is clicked.
     hideHeader(pageTitle);
-    // TODO: move to using unix timestamps
     var rightNow = moment();
-    var thisData = [];
     if (currentState == "start") {
       var startedTime = getClockTime(rightNow);
       // Starting always pushes a new item onto the array.
       timerData[currentCount] = {'startedTime': rightNow.unix()};
-      var rowName = 'row' + (currentCount + 1);
-      var oldRowName = 'row' + (currentCount);
-      var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="duration">-</td><td class="interval">-</td></tr>';
-      if (currentCount > 0) {
-        $("#" + oldRowName).before(newRow);
-      }
-      else {
-        $("tbody").append(newRow);
-        // On the first event there is no interval.
-        $("#" + rowName + " > .interval").text(':)');
-      }
-      $("#" + rowName + "> .time").text(startedTime);
-      toggleTimerButton.html('<em>S</em>top timer');
-      currentState = 'stop';
+      // Then add the row.
+      currentState = addStartRow(currentCount, toggleTimerButton, startedTime);
     }
     else if (currentState == "stop") {
+      // Record the data.
       var thisTime = currentCount - 1;
-      var lastTime = thisTime - 1;
       timerData[thisTime].stoppedTime = rightNow.unix();
-      var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
-      var rowName = 'row' + currentCount;
-      $("#" + rowName + "> .duration").text(elapsedTime);
-      if (currentCount > 1) {
-        var intervalTime = getElapsedTime(timerData[lastTime].startedTime, timerData[thisTime].startedTime);
-        $("#" + rowName + "> .interval").text(intervalTime);
-      }
-      toggleTimerButton.html('<em>S</em>tart timer');
-      currentState = 'start';
+      // And...update the table.
+      currentState = updateStopRow(timerData, thisTime, currentCount, toggleTimerButton);
     }
     toggleTimerButton.toggleClass('start stop');
     if (supports_html5_storage()) {
@@ -226,7 +234,9 @@
     });
   }
   $(document).ready(function() {
-    if (supports_html5_storage()) {
+      toggleTimerButton = $("#toggle-timer");
+      pageTitle = $("h1");
+      if (supports_html5_storage()) {
       // Check if they have data in local storage. If so, set some variables
       // and ensure the values are sane.
       if (localStorage.getItem('timerData')) {
@@ -238,13 +248,14 @@
       if (timerData.length > 0) {
         showClearButton();
         // TODO: Synch to dom.
-        if (localStorage['timerStat'] == 'start' || localStorage['timerStat'] == 'stop') {
+        // As we synch to DOM, initial state will be start.
+        localStorage['timerState'] = 'start';
+        var arrayLength = timerData.length;
+        for (var i = 0; i < arrayLength; i++) {
+          var currentCount = i;
           currentState = localStorage['timerState'];
-        }
-        else {
-          // This should never happen, but whatever.
-          currentState = 'start';
-          localStorage['timerState'] = currentState;
+          toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
+          console.log(timerData[i]);
         }
       }
       else {
@@ -252,8 +263,6 @@
         localStorage['timerState'] = 'start';
       }
     }
-    toggleTimerButton = $("#toggle-timer");
-    pageTitle = $("h1");
     $("#clear-storage").click(function() {
       toggleTimerButton.addClass('start');
       toggleTimerButton.removeClass('stop');
