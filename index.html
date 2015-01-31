@@ -159,7 +159,8 @@
       // If timerdata says it is start mode, show start mode.
       // Delete and re-Populate all the rows worth of data.
   }
-  function getClockTime(aNow) {
+  function getClockTime(nowUnixTime) {
+    var aNow = moment.unix(nowUnixTime);
     return aNow.format('h:mm:ss a');
   }
   function getElapsedTime(earlyTime, laterTime) {
@@ -182,9 +183,11 @@
     }
     $("#" + rowName + "> .time").text(startedTime);
     toggleTimerButton.html('<em>S</em>top timer');
+    toggleTimerButton.toggleClass('start stop');
     return 'stop';
   }
-  function updateStopRow(timerData, thisTime, currentCount, toggleTimerButton) {
+  function updateStopRow(timerData, currentCount, toggleTimerButton) {
+    var thisTime = currentCount - 1;
     var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
     var rowName = 'row' + currentCount;
     $("#" + rowName + "> .duration").text(elapsedTime);
@@ -194,6 +197,7 @@
       $("#" + rowName + "> .interval").text(intervalTime);
     }
     toggleTimerButton.html('<em>S</em>tart timer');
+    toggleTimerButton.toggleClass('start stop');
     return 'start';
   }
 
@@ -202,7 +206,7 @@
     hideHeader(pageTitle);
     var rightNow = moment();
     if (currentState == "start") {
-      var startedTime = getClockTime(rightNow);
+      var startedTime = getClockTime(rightNow.unix());
       // Starting always pushes a new item onto the array.
       timerData[currentCount] = {'startedTime': rightNow.unix()};
       // Then add the row.
@@ -210,12 +214,10 @@
     }
     else if (currentState == "stop") {
       // Record the data.
-      var thisTime = currentCount - 1;
-      timerData[thisTime].stoppedTime = rightNow.unix();
+      timerData[currentCount - 1].stoppedTime = rightNow.unix();
       // And...update the table.
-      currentState = updateStopRow(timerData, thisTime, currentCount, toggleTimerButton);
+      currentState = updateStopRow(timerData, currentCount, toggleTimerButton);
     }
-    toggleTimerButton.toggleClass('start stop');
     if (supports_html5_storage()) {
       localStorage.setItem('timerData', JSON.stringify(timerData));
       localStorage['timerState'] = currentState;
@@ -233,6 +235,17 @@
       });
     });
   }
+  function beginnersMind(toggleTimerbutton) {
+    toggleTimerButton.addClass('start');
+    toggleTimerButton.removeClass('stop');
+    localStorage.clear();
+    toggleTimerButton.html('<em>S</em>tart timer');
+    timerData = [];
+    currentState = 'start'
+    localStorage['timerState'] = currentState;
+    localStorage.setItem('timerData', JSON.stringify(timerData));
+    clearTableRows();
+  }
   $(document).ready(function() {
       toggleTimerButton = $("#toggle-timer");
       pageTitle = $("h1");
@@ -246,17 +259,25 @@
         timerData = [];
       }
       if (timerData.length > 0) {
+        hideHeader(pageTitle)
         showClearButton();
+        // Make sure things are "clear".
+        clearTableRows();
         // TODO: Synch to dom.
-        // As we synch to DOM, initial state will be start.
+        // As we synch to DOM, initial state *will* be start.
         localStorage['timerState'] = 'start';
         var arrayLength = timerData.length;
         for (var i = 0; i < arrayLength; i++) {
           var currentCount = i;
           currentState = localStorage['timerState'];
-          toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
-          console.log(timerData[i]);
+          currentState = addStartRow(currentCount, toggleTimerButton, getClockTime(timerData[i].startedTime));
+          // Only try to update the row if the data exists. Otherwise we're done.
+          if (timerData[i].hasOwnProperty('stoppedTime')) {
+            currentCount++;
+            currentState = updateStopRow(timerData, currentCount, toggleTimerButton);
+          }
         }
+        localStorage['timerState'] = currentState;
       }
       else {
         localStorage.setItem('timerData', JSON.stringify(timerData));
@@ -264,15 +285,7 @@
       }
     }
     $("#clear-storage").click(function() {
-      toggleTimerButton.addClass('start');
-      toggleTimerButton.removeClass('stop');
-      localStorage.clear();
-      toggleTimerButton.html('<em>S</em>tart timer');
-      timerData = [];
-      currentState = 'start'
-      localStorage['timerState'] = currentState;
-      localStorage.setItem('timerData', JSON.stringify(timerData));
-      clearTableRows();
+      beginnersMind(toggleTimerButton);
     });
     // Hide the header after 5 seconds.
     setTimeout(function() {
@@ -315,7 +328,7 @@
   </div>
   <div id="controls">
     <div id="clear-storage-container">
-      <button id="clear-storage" type="submit" style="display: none;">Clear storage</button>
+      <button id="clear-storage" type="submit" style="display: none;">Clear table</button>
     </div>
   </div>
   <div class="help">
