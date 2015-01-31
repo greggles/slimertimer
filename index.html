@@ -217,18 +217,39 @@
   function showClearButton() {
     $("#clear-storage").show('blind', {}, 500);
   }
+  function clearTableRows() {
+    $('#timer-data tbody tr').each(function (i, row) {
+      $(this).css("background-color","#FF3700");
+      $(this).fadeOut(400, function(){
+          $(this).remove();
+      });
+    });
+  }
   $(document).ready(function() {
     if (supports_html5_storage()) {
+      // Check if they have data in local storage. If so, set some variables
+      // and ensure the values are sane.
       if (localStorage.getItem('timerData')) {
+        timerData = JSON.parse(localStorage.getItem('timerData'));
+      }
+      else {
+        timerData = [];
+      }
+      if (timerData.length > 0) {
         showClearButton();
         // TODO: Synch to dom.
-        timerData = JSON.parse(localStorage.getItem('timerData'));
-        currentState = localStorage['timerState'];
+        if (localStorage['timerStat'] == 'start' || localStorage['timerStat'] == 'stop') {
+          currentState = localStorage['timerState'];
+        }
+        else {
+          // This should never happen, but whatever.
+          currentState = 'start';
+          localStorage['timerState'] = currentState;
+        }
       }
       else {
         localStorage.setItem('timerData', JSON.stringify(timerData));
-        localStorage['timerState'] = currentState;
-        timerData = JSON.parse(localStorage.getItem('timerData'));
+        localStorage['timerState'] = 'start';
       }
     }
     toggleTimerButton = $("#toggle-timer");
@@ -242,12 +263,7 @@
       currentState = 'start'
       localStorage['timerState'] = currentState;
       localStorage.setItem('timerData', JSON.stringify(timerData));
-      $('#timer-data tbody tr').each(function (i, row) {
-        $(this).css("background-color","#FF3700");
-        $(this).fadeOut(400, function(){
-          $(this).remove();
-        });
-      });
+      clearTableRows();
     });
     // Hide the header after 5 seconds.
     setTimeout(function() {
@@ -257,10 +273,10 @@
       switch (e.keyCode) {
         // 83, s. 13, return. 14, enter. 32, space.
         case 83: case 13: case 14: case 32:
-      var currentCount = Math.max(timerData.length, 1);
-      timerData = JSON.parse(localStorage.getItem('timerData'));
-      currentState = localStorage['timerState'];
-      toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
+          var currentCount = timerData.length;
+          timerData = JSON.parse(localStorage.getItem('timerData'));
+          currentState = localStorage['timerState'];
+          toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
       }
     });
     toggleTimerButton.click(function() {
