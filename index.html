@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Slimer Timer: For contractions and other interval-oriented events.</title>
+  <title>Slimer Timer: For childbirth labor contractions and other interval-oriented events.</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     @media all and (min-width: 769px) {
@@ -20,7 +20,7 @@
         font-size: 14px;
       }
       button {
-        width: 75%
+        width: 75%;
       }
       table {
         width: 80%;
@@ -31,7 +31,8 @@
         font-size: 12px;
       }
       button {
-        width: 90%
+        width: 90%;
+        height: 4em;
       }
       table {
         width: 95%;
@@ -42,7 +43,7 @@
       font-family: Arial, Helvetica, sans-serif;
       text-shadow: 1px 1px 0px #fff;
     }
-    .timer-content {
+    #timer-content {
       text-align: center;
     }
     table {
@@ -59,7 +60,7 @@
       border-top: 1px solid #fafafa;
       border-bottom: 1px solid #e0e0e0;
       background: #dddddd;
-      background: linear-gradient(to bottom,  #dfdfdf,  #dddddd);
+      background: linear-gradient(to bottom, #dfdfdf, #dddddd);
     }
     table th:first-child {
       text-align: left;
@@ -87,11 +88,11 @@
       border-left: 1px solid #e0e0e0;
 
       background: #fafafa;
-      background: linear-gradient(to bottom,  #fbfbfb,  #fafafa);
+      background: linear-gradient(to bottom, #fbfbfb, #fafafa);
     }
     table tr:nth-child(odd) td {
       background: #ededed;
-      background: linear-gradient(to bottom,  #ededed,  #ebebeb);
+      background: linear-gradient(to bottom, #ededed, #ebebeb);
     }
     table tr:last-child td {
       border-bottom:0;
@@ -104,11 +105,12 @@
     }
     table tr:hover td {
       background: #f2f2f2;
-      background: linear-gradient(to bottom,  #f2f2f2,  #f0f0f0);
+      background: linear-gradient(to bottom, #f2f2f2, #f0f0f0);
     }
     button {
       height: 3em;
       color: #fff;
+      background: linear-gradient(to bottom, #666666, #626262);
       font-size: 1.2em;
       margin-bottom: .4em;
     }
@@ -123,105 +125,176 @@
     button.stop {
       background: linear-gradient(to bottom, #c34545, #bd3131);
     }
+    #controls {
+      text-align: center;
+    }
+    #clear-storage-container button {
+        margin-top: 3em;
+    }
   </style>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
 
   <script>
   // Get rid of the h1 after a bit, it doesn't help.
   function hideHeader(pageTitle) {
     if (pageTitle.css('display') === 'block') {
-      pageTitle.hide('blind', 1000)
+      pageTitle.hide('blind', 1000);
     }
   }
   var pageTitle = null;
   var toggleTimerButton = null;
+  function supports_html5_storage() {
+    try {
+      return 'localStorage' in window && window['localStorage'] !== null;
+    } catch (e) {
+      return false;
+    }
+  }
   var timerData = [];
+  var currentState = 'start';
+  function synchDomToStorage(timerData) {
+      // If timerdata says it is stop mode, show stop mode.
+      // If timerdata says it is start mode, show start mode.
+      // Delete and re-Populate all the rows worth of data.
+  }
   function getClockTime(aNow) {
-    var hours = aNow.getHours();
-    var minutes = aNow.getMinutes();
-    var seconds = aNow.getSeconds();
-    var ampm = hours >= 12 ? 'pm' : 'am';
-    minutes = minutes < 10 ? '0' + minutes : minutes;
-    seconds = seconds < 10 ? '0' + seconds : seconds;
-    hours = hours % 12;
-    // The hour '0' should be '12'.
-    hours = hours ? hours : 12; 
-    return hours + ':' + minutes + ':' + seconds + " " + ampm;
+    return aNow.format('h:mm:ss a');
   }
   function getElapsedTime(earlyTime, laterTime) {
-    elapsedSeconds = (laterTime - earlyTime) / 1000;
+    var elapsedSeconds = (laterTime - earlyTime);
     var elapsedMinutes = Math.floor(elapsedSeconds / 60);
     var remainingSeconds = Math.round(elapsedSeconds % 60);
-
     return "" + elapsedMinutes + " mins " + remainingSeconds + " seconds";
   }
+  function toggleTimer(toggleTimerButton, timerData, currentCount, currentState) {
+    // Or, hide the header as soon as the button is clicked.
+    hideHeader(pageTitle);
+    // TODO: move to using unix timestamps
+    var rightNow = moment();
+    var thisData = [];
+    if (currentState == "start") {
+      var startedTime = getClockTime(rightNow);
+      // Starting always pushes a new item onto the array.
+      timerData[currentCount] = {'startedTime': rightNow.unix()};
+      var rowName = 'row' + (currentCount + 1);
+      var oldRowName = 'row' + (currentCount);
+      var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="duration">-</td><td class="interval">-</td></tr>';
+      if (currentCount > 0) {
+        $("#" + oldRowName).before(newRow);
+      }
+      else {
+        $("tbody").append(newRow);
+        // On the first event there is no interval.
+        $("#" + rowName + " > .interval").text(':)');
+      }
+      $("#" + rowName + "> .time").text(startedTime);
+      toggleTimerButton.html('<em>S</em>top timer');
+      currentState = 'stop';
+    }
+    else if (currentState == "stop") {
+      var thisTime = currentCount - 1;
+      var lastTime = thisTime - 1;
+      timerData[thisTime].stoppedTime = rightNow.unix();
+      var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
+      var rowName = 'row' + currentCount;
+      $("#" + rowName + "> .duration").text(elapsedTime);
+      if (currentCount > 1) {
+        var intervalTime = getElapsedTime(timerData[lastTime].startedTime, timerData[thisTime].startedTime);
+        $("#" + rowName + "> .interval").text(intervalTime);
+      }
+      toggleTimerButton.html('<em>S</em>tart timer');
+      currentState = 'start';
+    }
+    toggleTimerButton.toggleClass('start stop');
+    if (supports_html5_storage()) {
+      localStorage.setItem('timerData', JSON.stringify(timerData));
+      localStorage['timerState'] = currentState;
+      showClearButton();
+    }
+  }
+  function showClearButton() {
+    $("#clear-storage").show('blind', {}, 500);
+  }
+  function clearTableRows() {
+    $('#timer-data tbody tr').each(function (i, row) {
+      $(this).css("background-color","#FF3700");
+      $(this).fadeOut(400, function(){
+          $(this).remove();
+      });
+    });
+  }
   $(document).ready(function() {
+    if (supports_html5_storage()) {
+      // Check if they have data in local storage. If so, set some variables
+      // and ensure the values are sane.
+      if (localStorage.getItem('timerData')) {
+        timerData = JSON.parse(localStorage.getItem('timerData'));
+      }
+      else {
+        timerData = [];
+      }
+      if (timerData.length > 0) {
+        showClearButton();
+        // TODO: Synch to dom.
+        if (localStorage['timerStat'] == 'start' || localStorage['timerStat'] == 'stop') {
+          currentState = localStorage['timerState'];
+        }
+        else {
+          // This should never happen, but whatever.
+          currentState = 'start';
+          localStorage['timerState'] = currentState;
+        }
+      }
+      else {
+        localStorage.setItem('timerData', JSON.stringify(timerData));
+        localStorage['timerState'] = 'start';
+      }
+    }
     toggleTimerButton = $("#toggle-timer");
     pageTitle = $("h1");
+    $("#clear-storage").click(function() {
+      toggleTimerButton.addClass('start');
+      toggleTimerButton.removeClass('stop');
+      localStorage.clear();
+      toggleTimerButton.html('<em>S</em>tart timer');
+      timerData = [];
+      currentState = 'start'
+      localStorage['timerState'] = currentState;
+      localStorage.setItem('timerData', JSON.stringify(timerData));
+      clearTableRows();
+    });
     // Hide the header after 5 seconds.
     setTimeout(function() {
       hideHeader(pageTitle);
     }, 5000);
-    function toggleTimer() {
-      // Or, hide the header as soon as the button is clicked.
-      hideHeader(pageTitle);
-      var rightNow = new Date();
-      if (toggleTimerButton.hasClass("start")) {
-        var startedTime = getClockTime(rightNow);
-        // Starting always pushes a new item onto the array.
-        timerData[timerData.length] = {'startedTime': rightNow};
-        var rowName = 'row' + timerData.length;
-        var oldRowName = 'row' + (timerData.length - 1);
-        var newRow = '<tr id="' + rowName + '"><td class="time">-</td><td class="length">-</td><td class="interval">-</td></tr>';
-        if (timerData.length > 1) {
-          $("#" + oldRowName).before(newRow);
-        }
-        else {
-          $("tbody").append(newRow);
-          // On the first event there is no interval.
-          $("#" + rowName + " > .interval").text(':)');
-        }
-        $("#" + rowName + "> .time").text(startedTime);
-        toggleTimerButton.html('<em>S</em>top timer');
-      }
-      if (toggleTimerButton.hasClass("stop")) {
-        var thisTime = timerData.length - 1;
-        var lastTime = thisTime - 1;
-        timerData[thisTime].stoppedTime = rightNow;
-        var elapsedTime = getElapsedTime(timerData[thisTime].startedTime, timerData[thisTime].stoppedTime);
-        var rowName = 'row' + timerData.length;
-        $("#" + rowName + "> .length").text(elapsedTime);
-        if (timerData.length > 1) {
-          var intervalTime = getElapsedTime(timerData[lastTime].startedTime, timerData[thisTime].startedTime);
-          $("#" + rowName + "> .interval").text(intervalTime);
-        }
-        toggleTimerButton.html('<em>S</em>tart timer');
-      }
-      toggleTimerButton.toggleClass('start stop');
-      event.preventDefault();
-    }
     $(window).keydown(function(e) {
-        switch (e.keyCode) {
-          // 83, s. 13, return. 14, enter. 32, space.
-          case 83: case 13: case 14: case 32:
-            toggleTimer();
-        }
-        return;
+      switch (e.keyCode) {
+        // 83, s. 13, return. 14, enter. 32, space.
+        case 83: case 13: case 14: case 32:
+          var currentCount = timerData.length;
+          timerData = JSON.parse(localStorage.getItem('timerData'));
+          currentState = localStorage['timerState'];
+          toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
+      }
     });
     toggleTimerButton.click(function() {
-      toggleTimer();
+      var currentCount = timerData.length;
+      timerData = JSON.parse(localStorage.getItem('timerData'));
+      currentState = localStorage['timerState'];
+      toggleTimer(toggleTimerButton, timerData, currentCount, currentState);
     });
   });
   </script>
 </head>
 <body>
-  <div class="timer-content">
+  <div id="timer-content">
     <div class="title">
       <h1>Contraction timer</h1>
     </div>
     <button id="toggle-timer" class="start" accesskey="s" type="submit"><em>S</em>tart timer</button>
-    <table>
+    <table id="timer-data">
       <thead>
         <tr>
           <th>Start time</th><th>Length</th><th>Interval</th>
@@ -231,12 +304,17 @@
       </tbody>
     </table>
   </div>
+  <div id="controls">
+    <div id="clear-storage-container">
+      <button id="clear-storage" type="submit" style="display: none;">Clear storage</button>
+    </div>
+  </div>
   <div class="help">
     <h2>How to use this:</h2>
     <ol>
       <li>This site is to help anyone who is tracking childbirth labor contractions</li>
       <li>When a contraction starts hit the start button (or press a key like "s", enter/return, or the space bar). It will change to a "stop" button which...you should press again when the contraction stops.</li>
-      <li>Work with your healthcare professional and do your own research to decide how to use this information, but...</li>
+      <li>Work with your health care professional and do your own research to decide how to use this information, but...</li>
       <li>Common rules are "5-1-1" where you should wait for contractions to be 5 minutes apart each one lasting 1 minute over a 1 hour period before you go to the birthing center. This tool is oriented toward tracking a 5-1-1 scenario.</li>
       <li>You may also be in "serious labor" if you cannot talk through the contraction or are the contractions are intense/painful.</li>
       <li>Your data is only present inside of your browser and never sent to a server. If you <a href="#">refresh</a> the page the data will disappear</li>
@@ -249,10 +327,8 @@
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
   ga('create', 'UA-273751-41', 'auto');
   ga('send', 'pageview');
-
 </script>
 </body>
 </html>
