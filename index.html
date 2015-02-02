@@ -279,6 +279,7 @@
         // If they're not the same, use the one that's populated.
         if (JSON.stringify(hashTimerData.length) != JSON.stringify(localStorageTimerData.length)) {
           if (hashTimerData.length && !localStorageTimerData.length) {
+            // TODO: this is probably a friend who got a link. Give them a message explaining the data is not real time.
             timerData = hashTimerData;
           }
           else {
@@ -286,7 +287,8 @@
           }
         }
         else {
-          // If they are the same, use one.
+          // If they are the same, use the one that is not exposed to humans.
+          // TODO: ideally put up a message letting people know which we chose.
           timerData = localStorageTimerData;
         }
       }
