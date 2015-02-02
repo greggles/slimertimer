@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Slimer Timer: For childbirth labor contractions and other interval-oriented events.</title>
+  <title>Slimer Timer: For childbirth labor contraction timer, in browser, mobile optimized.</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     @media all and (min-width: 769px) {
@@ -135,7 +135,7 @@
     #clear-storage-container {
       padding-top: 1em;
     }
-    #clear-storage-container button.invisible {
+    .invisible {
       opacity: 0;
     }
   </style>
@@ -206,7 +206,15 @@
     toggleTimerButton.toggleClass('start stop');
     return 'start';
   }
-
+  function storeTimerData(timerData) {
+    localStorage.setItem('timerData', JSON.stringify(timerData));
+    window.location.hash = JSON.stringify(timerData);
+  }
+  function updateShareUrls() {
+    $("#fbshare").attr("href", "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(document.URL));
+    $("#twittershare").attr("href", "http://twitter.com/home?status=" + encodeURIComponent("Slimer Timer - a browser based childbirth contraction timer " + document.URL));
+    $("#emailshare").attr("href", "mailto:?subject=My+labor+contraction+timing+data&body=" + encodeURIComponent("I'm using a browser based childbirth contraction timer. Here's a link to my current data (the data doesn't update, I have to send a new link if I want you to get new data): <" + document.URL + ">"));
+  }
   function toggleTimer(toggleTimerButton, timerData, currentCount, currentState) {
     // Or, hide the header as soon as the button is clicked.
     hideHeader(pageTitle);
@@ -224,15 +232,13 @@
       // And...update the table.
       currentState = updateStopRow(timerData, currentCount, toggleTimerButton);
     }
-    if (supports_html5_storage()) {
-      localStorage.setItem('timerData', JSON.stringify(timerData));
-      localStorage['timerState'] = currentState;
-      showClearButton();
-    }
+    storeTimerData(timerData)
+    localStorage['timerState'] = currentState;
+    showClearButton();
   }
   function showClearButton() {
     $("#clear-storage").show('blind', 1000, function () {
-      $("#clear-storage").removeClass('invisible');
+      $("#clear-storage-container").removeClass('invisible');
     });
   }
   function clearTableRows() {
@@ -251,17 +257,38 @@
     timerData = [];
     currentState = 'start'
     localStorage['timerState'] = currentState;
-    localStorage.setItem('timerData', JSON.stringify(timerData));
+    storeTimerData(timerData);
     clearTableRows();
+    updateShareUrls();
   }
   $(document).ready(function() {
-      toggleTimerButton = $("#toggle-timer");
-      pageTitle = $("h1");
+    toggleTimerButton = $("#toggle-timer");
+    pageTitle = $("h1");
       if (supports_html5_storage()) {
       // Check if they have data in local storage. If so, set some variables
       // and ensure the values are sane.
+      var hashTimerData = [];
+      var localStorageTimerData = [];
+      if (window.location.hash.length > 1) {
+        hashTimerData = JSON.parse(window.location.hash.substring(1));
+      }
       if (localStorage.getItem('timerData')) {
-        timerData = JSON.parse(localStorage.getItem('timerData'));
+        localStorageTimerData = JSON.parse(localStorage.getItem('timerData'));
+      }
+      if (hashTimerData.length || localStorageTimerData.length) {
+        // If they're not the same, use the one that's populated.
+        if (JSON.stringify(hashTimerData.length) != JSON.stringify(localStorageTimerData.length)) {
+          if (hashTimerData.length && !localStorageTimerData.length) {
+            timerData = hashTimerData;
+          }
+          else {
+            timerData = localStorageTimerData;
+          }
+        }
+        else {
+          // If they are the same, use one.
+          timerData = localStorageTimerData;
+        }
       }
       else {
         timerData = [];
@@ -285,10 +312,12 @@
             currentState = updateStopRow(timerData, currentCount, toggleTimerButton);
           }
         }
+        // Make sure the share buttons include whatever is appropriate.
+        updateShareUrls();
         localStorage['timerState'] = currentState;
       }
       else {
-        localStorage.setItem('timerData', JSON.stringify(timerData));
+        storeTimerData(timerData);
         localStorage['timerState'] = 'start';
       }
     }
@@ -323,7 +352,7 @@
     <div class="title">
       <h1>Contraction timer</h1>
     </div>
-    <button id="toggle-timer" class="start" accesskey="s" type="submit"><em>S</em>tart timer</button>
+      <button id="toggle-timer" class="start" accesskey="s" type="submit"><em>S</em>tart timer</button>
     <table id="timer-data">
       <thead>
         <tr>
@@ -335,8 +364,13 @@
     </table>
   </div>
   <div id="controls">
-    <div id="clear-storage-container">
-      <button id="clear-storage" class="invisible" type="submit" style="display: none;">Clear table</button>
+    <div id="clear-storage-container" class="invisible">
+      <button id="clear-storage" type="submit" style="display: none;">Clear data</button>
+      <div id="share-bear">
+      <a id="fbshare" href="https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fgreggles.github.io%2Fslimertimer%2F">Share to FaceBook</a>
+      <a id="twittershare" href="http://twitter.com/home?status=Slimer+Timer+-+a+browser+based+childbirth+contraction+timer+http%3A%2F%2Fgreggles.github.io%2Fslimertimer%2F">Share to Twitter</a>
+      <a id="emailshare" href="mailto:?subject=My+labor+contraction+timing+data&body=I'm%20using%20a%20browser%20based%20childbirth%20contraction%20timer.%20http%3A%2F%2Fgreggles.github.io%2Fslimertimer">Send via email</a>
+      </div>
     </div>
   </div>
   <div class="help">
