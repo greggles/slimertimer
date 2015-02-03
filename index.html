@@ -243,9 +243,10 @@
   }
   function clearTableRows() {
     $('#timer-data tbody tr').each(function (i, row) {
-      $(this).css("background-color","#FF3700");
-      $(this).fadeOut(400, function(){
-          $(this).remove();
+      var $this = $(this);
+      $this.css("background-color","#FF3700");
+      $this.fadeOut(400, function(){
+        $this.remove();
       });
     });
   }
